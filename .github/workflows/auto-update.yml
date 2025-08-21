@@ -1,13 +1,14 @@
-name: 自动生成IPTV频道源
+name: 自动生成IPTV频道源（主控脚本）
 
 on:
   schedule:
-    - cron: '0 3 * * *' # 每天UTC时间3点运行
-  workflow_dispatch:     # 允许手动触发
+    - cron: '0 2 * * *'    # 每天UTC时间2点自动执行，可根据需要调整
+  workflow_dispatch:       # 支持手动触发
 
 jobs:
-  run-scripts:
+  run-iptv-main:
     runs-on: ubuntu-latest
+
     steps:
       - name: 检出仓库代码
         uses: actions/checkout@v4
@@ -15,30 +16,25 @@ jobs:
       - name: 设置Python环境
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'  # 可根据实际情况修改
+          python-version: '3.10'   # 根据你的依赖指定Python版本
 
       - name: 安装依赖
         run: |
+          pip install --upgrade pip
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
 
-      # 假设主入口脚本为 main.py
-      - name: 运行主控脚本
+      - name: 执行主控脚本 main.py
         run: python main.py
 
-      # 如果有多个脚本需分别运行，添加多步，如:
-      # - name: 运行抓取脚本
-      #   run: python fetch.py
-      # - name: 运行过滤脚本
-      #   run: python filter.py
-      # - name: 生成输出
-      #   run: python generate.py
+      # 如你的脚本会在 output/iptv.m3u 或 iptv.m3u 生成直播文件，请确保文件已实际生成。
+      # 如果有多个输出文件/目录，请修改下方 git add 路径。
 
-      - name: 提交和推送结果
+      - name: 提交并推送生成的直播文件
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .
+          git add .    # 或 git add output/*.m3u output/*.txt
           git commit -m "自动更新IPTV直播源 $(date +'%Y-%m-%d')" || echo "No changes to commit"
           git push
