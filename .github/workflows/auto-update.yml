@@ -1,38 +1,44 @@
-name: Auto Update IPTV Sources
+name: 自动生成IPTV频道源
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # 每天 UTC 时间 2 点自动运行，可根据需要调整
-  workflow_dispatch:      # 也支持手动触发
+    - cron: '0 3 * * *' # 每天UTC时间3点运行
+  workflow_dispatch:     # 允许手动触发
 
 jobs:
-  update:
+  run-scripts:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: 检出仓库代码
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'  # 可根据实际情况修改
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+      - name: 安装依赖
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
 
-    - name: Run spider script
-      run: |
-        python spider.py    # 这里替换为实际的采集主脚本
+      # 假设主入口脚本为 main.py
+      - name: 运行主控脚本
+        run: python main.py
 
-    - name: Commit and push changes
-      run: |
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add .
-        git commit -m "自动更新IPTV源 $(date '+%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
-        git push
-      env:
-        # 使用默认GITHUB_TOKEN即可，无需额外配置
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 如果有多个脚本需分别运行，添加多步，如:
+      # - name: 运行抓取脚本
+      #   run: python fetch.py
+      # - name: 运行过滤脚本
+      #   run: python filter.py
+      # - name: 生成输出
+      #   run: python generate.py
+
+      - name: 提交和推送结果
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "自动更新IPTV直播源 $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
